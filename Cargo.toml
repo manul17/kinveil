@@ -36,7 +36,7 @@ rustix = { version = "1", features = ["fs", "process"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.11"
-shlex = "1"
+shlex = "2"
 ssh-key = { version = "0.6", features = ["ed25519", "std", "alloc"] }
 tar = "0.4"
 tempfile = "3"
