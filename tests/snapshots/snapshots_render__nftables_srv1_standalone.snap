@@ -1,0 +1,53 @@
+---
+source: tests/snapshots_render.rs
+expression: "render_nftables(&state, srv1, Some(999), &[1001, 1002], &dns_ips).unwrap()"
+---
+#!/usr/sbin/nft -f
+flush ruleset
+
+table inet kinveil {
+    chain input {
+        type filter hook input priority filter; policy drop;
+        iifname "lo" accept
+        ct state vmap { established : accept, related : accept, invalid : drop }
+        ip protocol icmp accept
+        meta l4proto ipv6-icmp accept
+        tcp dport 2220 accept
+        tcp dport 8443 accept
+        udp dport 9443 accept
+        udp dport 7443 accept
+        tcp dport { 80, 443 } accept
+        tcp dport 2222 accept
+    }
+    chain forward {
+        type filter hook forward priority filter; policy drop;
+        ct state vmap { established : accept, related : accept, invalid : drop }
+        iifname "kv0" tcp flags syn / syn,rst tcp option maxseg size set rt mtu
+        oifname "kv0" tcp flags syn / syn,rst tcp option maxseg size set rt mtu
+        iifname "kv0" oifname "kv0" reject
+        iifname "kv0" meta nfproto ipv6 reject
+        iifname "kv0" ip daddr { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.0.0.0/24, 192.168.0.0/16, 198.18.0.0/15, 224.0.0.0/4, 240.0.0.0/4 } reject
+        iifname "kv0" accept
+    }
+    chain postrouting {
+        type nat hook postrouting priority srcnat; policy accept;
+        iifname "kv0" oifname != "kv0" ip saddr 10.8.0.0/16 masquerade
+    }
+    set vpnssh_users { type uid; elements = { 1001, 1002 }; }
+    chain output {
+        type filter hook output priority -10; policy accept;
+        ct direction reply accept
+        meta skuid 999 ip daddr 1.1.1.1 meta l4proto { tcp, udp } th dport 53 accept
+        meta skuid 999 ip6 daddr 2606:4700:4700::1111 meta l4proto { tcp, udp } th dport 53 accept
+        meta skuid 999 ip daddr 198.51.100.10 tcp dport { 80, 443 } accept
+        meta skuid 999 ip6 daddr 2001:db8::10 tcp dport { 80, 443 } accept
+        meta skuid 999 fib daddr type local reject
+        meta skuid 999 ip daddr { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.0.0.0/24, 192.168.0.0/16, 198.18.0.0/15, 224.0.0.0/4, 240.0.0.0/4 } reject
+        meta skuid 999 ip6 daddr { ::/128, ::1/128, ::ffff:0:0/96, 64:ff9b::/96, 100::/64, fc00::/7, fe80::/10, ff00::/8 } reject
+        meta skuid @vpnssh_users ip daddr 1.1.1.1 meta l4proto { tcp, udp } th dport 53 accept
+        meta skuid @vpnssh_users ip6 daddr 2606:4700:4700::1111 meta l4proto { tcp, udp } th dport 53 accept
+        meta skuid @vpnssh_users fib daddr type local reject
+        meta skuid @vpnssh_users ip daddr { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.0.0.0/24, 192.168.0.0/16, 198.18.0.0/15, 224.0.0.0/4, 240.0.0.0/4 } reject
+        meta skuid @vpnssh_users ip6 daddr { ::/128, ::1/128, ::ffff:0:0/96, 64:ff9b::/96, 100::/64, fc00::/7, fe80::/10, ff00::/8 } reject
+    }
+}

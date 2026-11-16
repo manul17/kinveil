@@ -1,0 +1,126 @@
+# Kinveil global configuration (stored encrypted inside state.enc).
+#
+# Edit safely in RAM via: kinveil config
+# Print active file via:  kinveil config --print
+#
+# Every key below is commented out at its built-in default.
+# Uncomment any setting you want to override. Unknown keys are rejected.
+# Your comments and formatting stay intact across all CLI operations.
+
+
+[firewall]
+# Block client egress (Xray, AmneziaWG, SSH forwarding) to RFC1918 and CGNAT ranges.
+# Loopback, unspecified, link-local, and cloud IMDS addresses are always blocked.
+# block_private_networks = true
+
+# Block BitTorrent protocol traffic inside Xray (VLESS REALITY and Hysteria2).
+# block_bittorrent = true
+
+
+[subscription]
+# Client auto-refresh interval sent via Caddy's Profile-Update-Interval header (hours).
+# update_interval_hours = 12
+
+# Subscription profile title displayed in Happ/Throne (1-64 UTF-8 chars, no control chars).
+# profile_title = "Kinveil"
+
+# Optional Happ split-tunneling deep link sent in the `routing` response header.
+# happ_routing = "happ://routing/onadd/example"
+
+
+[vless]
+# Globally enable or disable VLESS REALITY + XHTTP across all VPN nodes and subscriptions.
+# Disable individual modes below or toggle `vless` per server via `kinveil server update`.
+# enabled = true
+
+# Default TCP port for VLESS REALITY unless overridden per server.
+# port = 8443
+
+# Advertise XHTTP stream-up and/or packet-up modes on VLESS REALITY inbounds.
+# stream = true
+# packet = true
+
+# uTLS client fingerprint (chrome, firefox, safari, ios, android, edge, 360, qq, random, randomized).
+# fingerprint = "chrome"
+
+# Advertise post-quantum X25519MLKEM768 key exchange in subscription links.
+# support_x25519mlkem768 = true
+
+
+[vless.xhttp]
+# XHTTP padding byte range and maximum buffered POST requests.
+# padding_bytes = "100-1000"
+# sc_max_buffered_posts = 30
+
+
+[vless.xmux]
+# Client XHTTP multiplexing limits ("lo-hi" range or integer; 0 disables a limit).
+# max_concurrency = "16-32"
+# max_connections = 0
+# c_max_reuse_times = 0
+# h_max_request_times = "600-900"
+# h_max_reusable_secs = "1800-3000"
+# h_keep_alive_period = 0
+
+
+[hysteria2]
+# Globally enable or disable Hysteria2 across all VPN nodes and subscriptions.
+# enabled = true
+
+# Default UDP port for Hysteria2 unless overridden per server.
+# port = 9443
+
+# TLS ALPN list, unauthenticated HTTP masquerade URL, and UDP NAT idle timeout (seconds).
+# alpn = ["h3"]
+# masquerade_url = "https://www.microsoft.com"
+# udp_idle_timeout_secs = 60
+
+
+[amneziawg]
+# Globally enable or disable AmneziaWG 3.1 across all VPN nodes and subscriptions.
+# enabled = true
+
+# Default UDP port for AmneziaWG unless overridden per server.
+# port = 7443
+
+# IPv4 VPN subnet for AmneziaWG (prefix length must be <= /30; .1 is reserved for server).
+# subnet = "10.8.0.0/16"
+
+# DNS servers pushed to AmneziaWG clients (1 to 4 IPv4 addresses).
+# dns_servers = ["8.8.8.8", "8.8.4.4"]
+
+# Tunnel interface MTU (1280-1500; lower to 1280-1320 if PPPoE links fragment packets).
+# mtu = 1360
+
+# Randomized WireGuard/AmneziaWG timing ranges pushed in client INI configs ("lo-hi" or int).
+# rekey_after_time = "100-118"
+# rekey_timeout = "5-9"
+# reject_after_time = "176-249"
+# keepalive_timeout = "9-12"
+# max_handshake_attempts = "16-26"
+
+
+[ssh_forwarding]
+# Globally enable or disable SSH port forwarding across all VPN nodes and Throne subscriptions.
+# enabled = true
+
+# Default TCP port for kinveil-ssh (OpenSSH) unless overridden per server.
+# port = 2222
+
+
+[sysctl]
+# Kernel socket buffer sizes written to /etc/sysctl.d/90-kinveil.conf for QUIC/AWG throughput.
+# udp_rmem_max = 16777216
+# udp_wmem_max = 16777216
+# udp_rmem_default = 4194304
+# udp_wmem_default = 4194304
+
+
+[artifacts]
+# Optional pinned runtime artifact overrides (HTTPS URL + lowercase hex SHA-256 pairs)
+# to update Xray-core or amneziawg-go independently of a Kinveil release.
+# For amneziawg-go, point amneziawg_url at a direct linux/amd64 ELF binary and set its SHA-256.
+# xray_zip_url = "https://github.com/XTLS/Xray-core/releases/download/v26.11.9/Xray-linux-64.zip"
+# xray_zip_sha256 = "b651f7e1d9966ee2c1b1ee1bf8b52c72771824d3065dce96bbc8bcc19ed95f82"
+# amneziawg_url = "https://example.com/amneziawg-go-linux-amd64"
+# amneziawg_sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"

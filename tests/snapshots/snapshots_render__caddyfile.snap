@@ -1,0 +1,48 @@
+---
+source: tests/snapshots_render.rs
+expression: render_caddyfile(&state).unwrap()
+---
+{
+    admin off
+    servers {
+        protocols h1 h2
+    }
+}
+
+sub.example.com {
+    log {
+        output discard
+    }
+
+    @sub_path path_regexp sub ^/s8k2m9x4p1q7w3z5/([A-Za-z0-9_-]+)$
+    handle @sub_path {
+        root * /var/lib/kinveil/sub
+        header {
+            Cache-Control "private, no-store"
+            Vary "User-Agent"
+            Profile-Title "base64:S2ludmVpbA=="
+            Profile-Update-Interval "12"
+            Content-Type "text/plain; charset=utf-8"
+        }
+        @throne {
+            header_regexp User-Agent (?i)^throne/
+        }
+        @throne_query {
+            query ssh=1
+        }
+        handle @throne {
+            rewrite * /{re.sub.1}/throne
+            file_server
+        }
+        handle @throne_query {
+            rewrite * /{re.sub.1}/throne
+            file_server
+        }
+        rewrite * /{re.sub.1}/happ
+        file_server
+    }
+
+    handle {
+        respond 404
+    }
+}

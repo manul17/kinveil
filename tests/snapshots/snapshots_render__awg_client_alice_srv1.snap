@@ -1,0 +1,37 @@
+---
+source: tests/snapshots_render.rs
+expression: "render_client_ini(&state, srv1, alice).unwrap()"
+---
+[Interface]
+PrivateKey = cLIdBM6FBFlytyBicj69emtXwDtphkEK2NgWOS02IHA=
+Address = 10.8.0.2/32
+DNS = 8.8.8.8, 8.8.4.4
+MTU = 1360
+Jc = 4
+Jmin = 60
+Jmax = 180
+S1 = 41
+S2 = 134
+S3 = 38
+S4 = 16
+H1 = 162955118
+H2 = 983515823
+H3 = 1305870938
+H4 = 1813353860
+I1 = <r 52>
+HeaderProtectionKey = dGVzdC1oZWFkZXItcHJvdGVjdGlvbi1rZXktMzJieXQ=
+ContentPaddingAddition = 17-41
+RekeyAfterTime = 100-118
+RekeyTimeout = 5-9
+RejectAfterTime = 176-249
+KeepaliveTimeout = 9-12
+MaxHandshakeAttempts = 16-26
+RandomTrailers = on
+DisableCookies = on
+
+# DE Germany amneziawg
+[Peer]
+PublicKey = 5dgvwFRScAZheQTPkOedjNnxISTmOK6mcgo2G30+HHA=
+PresharedKey = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE=
+AllowedIPs = 0.0.0.0/0, ::/0
+Endpoint = 198.51.100.10:7443

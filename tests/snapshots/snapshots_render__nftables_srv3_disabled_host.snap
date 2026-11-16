@@ -1,0 +1,17 @@
+---
+source: tests/snapshots_render.rs
+expression: "render_nftables_for_host(&state, srv3).unwrap()"
+---
+#!/usr/sbin/nft -f
+flush ruleset
+
+table inet kinveil {
+    chain input {
+        type filter hook input priority filter; policy drop;
+        iifname "lo" accept
+        ct state vmap { established : accept, related : accept, invalid : drop }
+        ip protocol icmp accept
+        meta l4proto ipv6-icmp accept
+        tcp dport 2220 accept
+    }
+}

@@ -1,0 +1,37 @@
+---
+source: tests/snapshots_render.rs
+expression: "render_nftables_for_host(&state, srv1).unwrap()"
+---
+#!/usr/sbin/nft -f
+flush ruleset
+
+table inet kinveil {
+    chain input {
+        type filter hook input priority filter; policy drop;
+        iifname "lo" accept
+        ct state vmap { established : accept, related : accept, invalid : drop }
+        ip protocol icmp accept
+        meta l4proto ipv6-icmp accept
+        tcp dport 2220 accept
+        tcp dport 8443 accept
+        udp dport 9443 accept
+        udp dport 7443 accept
+        tcp dport { 80, 443 } accept
+        tcp dport 2222 accept
+    }
+    chain forward {
+        type filter hook forward priority filter; policy drop;
+        ct state vmap { established : accept, related : accept, invalid : drop }
+        iifname "kv0" tcp flags syn / syn,rst tcp option maxseg size set rt mtu
+        oifname "kv0" tcp flags syn / syn,rst tcp option maxseg size set rt mtu
+        iifname "kv0" oifname "kv0" reject
+        iifname "kv0" meta nfproto ipv6 reject
+        iifname "kv0" ip daddr { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.0.0.0/24, 192.168.0.0/16, 198.18.0.0/15, 224.0.0.0/4, 240.0.0.0/4 } reject
+        iifname "kv0" accept
+    }
+    chain postrouting {
+        type nat hook postrouting priority srcnat; policy accept;
+        iifname "kv0" oifname != "kv0" ip saddr 10.8.0.0/16 masquerade
+    }
+    include "/etc/kinveil/nft-egress.nft"
+}

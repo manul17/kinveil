@@ -1,0 +1,199 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.*'
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-artifacts:
+    name: Build & Verify Runtime Binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Install pinned Go 1.27.4 toolchain
+        run: |
+          set -euo pipefail
+          curl -fsSL -o go.tar.gz https://go.dev/dl/go1.27.4.linux-amd64.tar.gz
+          echo "7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840  go.tar.gz" | sha256sum -c -
+          sudo rm -rf /usr/local/go
+          sudo tar -C /usr/local -xzf go.tar.gz
+          rm -f go.tar.gz
+          echo "/usr/local/go/bin" >> "$GITHUB_PATH"
+          echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
+          echo "GOTELEMETRY=off" >> "$GITHUB_ENV"
+
+      - name: Build and verify static amneziawg-go (linux/amd64)
+        run: |
+          set -euo pipefail
+          mkdir -p runtime
+          git clone --depth 1 --branch v3.1.20260828 https://github.com/amnezia-vpn/amneziawg-go.git awg-src
+          actual_commit="$(git -C awg-src rev-parse HEAD)"
+          if [ "$actual_commit" != "b5928efb6ca19f0153958460c3d141f04abc5c2e" ]; then
+            echo "Commit mismatch: expected b5928efb6ca19f0153958460c3d141f04abc5c2e, got $actual_commit" >&2
+            exit 1
+          fi
+          (
+            cd awg-src
+            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+              go build -trimpath -buildvcs=false -ldflags="-s -w -buildid=" -o ../runtime/amneziawg-go-v3.1.20260828-linux-amd64 .
+          )
+          chmod 0755 runtime/amneziawg-go-v3.1.20260828-linux-amd64
+          echo "fa81c45e5a54ea73b09aad93cc2dc69b2f51f673fc62f9cf2b7482fa9472ad66  runtime/amneziawg-go-v3.1.20260828-linux-amd64" | sha256sum -c -
+
+      - name: Download and verify Xray-core (linux/amd64)
+        run: |
+          set -euo pipefail
+          mkdir -p runtime
+          curl -fsSL -o Xray-linux-64.zip https://github.com/XTLS/Xray-core/releases/download/v26.11.9/Xray-linux-64.zip
+          echo "b651f7e1d9966ee2c1b1ee1bf8b52c72771824d3065dce96bbc8bcc19ed95f82  Xray-linux-64.zip" | sha256sum -c -
+          unzip -p Xray-linux-64.zip xray > runtime/xray-v26.11.9-linux-amd64
+          rm -f Xray-linux-64.zip
+          chmod 0755 runtime/xray-v26.11.9-linux-amd64
+          echo "e87bce586acdb9136aa5b1f1d9c8db9f1ea1d145b6d86368c7f6f662f9f6a66d  runtime/xray-v26.11.9-linux-amd64" | sha256sum -c -
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: runtime-linux-amd64
+          path: runtime/*
+
+  build:
+    name: Build (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            musl: true
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-24.04-arm
+            musl: true
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            musl: false
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            musl: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Verify Cargo.toml version matches release tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          tag_version="${TAG#v}"
+          cargo_version="$(awk -F'"' '$1 ~ /^version[[:space:]]*=[[:space:]]*$/ { print $2; exit }' Cargo.toml)"
+          if [ "$cargo_version" != "$tag_version" ]; then
+            echo "Version mismatch: tag '$TAG' expects Cargo.toml version '$tag_version', got '$cargo_version'" >&2
+            exit 1
+          fi
+
+      - name: Install musl toolchain
+        if: matrix.musl
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends musl-tools
+
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Run test suite
+        run: cargo test --locked
+
+      - name: Build release binary
+        env:
+          CC_x86_64_unknown_linux_musl: musl-gcc
+          CC_aarch64_unknown_linux_musl: musl-gcc
+        run: cargo build --release --locked --target ${{ matrix.target }}
+
+      - name: Smoke test binary
+        if: matrix.target != 'x86_64-apple-darwin'
+        run: "./target/${{ matrix.target }}/release/kinveil" --version
+
+      - name: Stage binary artifact
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          install -m 0755 "target/${TARGET}/release/kinveil" "out/kinveil-${TARGET}"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: bin-${{ matrix.target }}
+          path: out/kinveil-${{ matrix.target }}
+
+  publish:
+    name: Publish GitHub Release
+    needs: [build, runtime-artifacts]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: runtime-linux-amd64
+          path: runtime
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: bin-*
+          path: bins
+          merge-multiple: true
+
+      - name: Package release archives
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          for target in \
+            x86_64-unknown-linux-musl \
+            aarch64-unknown-linux-musl \
+            aarch64-apple-darwin \
+            x86_64-apple-darwin; do
+            dir="kinveil-${TAG}-${target}"
+            rm -rf "stage/${dir}"
+            mkdir -p "stage/${dir}/artifacts"
+            install -m 0755 "bins/kinveil-${target}" "stage/${dir}/kinveil"
+            install -m 0755 scripts/install-release.sh "stage/${dir}/install.sh"
+            install -m 0755 runtime/xray-v26.11.9-linux-amd64 "stage/${dir}/artifacts/xray-v26.11.9-linux-amd64"
+            install -m 0755 runtime/amneziawg-go-v3.1.20260828-linux-amd64 "stage/${dir}/artifacts/amneziawg-go-v3.1.20260828-linux-amd64"
+            cp LICENSE README.md SECURITY.md config.example.toml "stage/${dir}/"
+            cp -r docs "stage/${dir}/docs"
+            tar -C stage -czf "dist/${dir}.tar.gz" "${dir}"
+          done
+          install -m 0755 runtime/amneziawg-go-v3.1.20260828-linux-amd64 dist/amneziawg-go-v3.1.20260828-linux-amd64
+          (cd dist && sha256sum *.tar.gz amneziawg-go-* > SHA256SUMS && cat SHA256SUMS)
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+        with:
+          subject-path: |
+            dist/*.tar.gz
+            dist/amneziawg-go-*
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/*.tar.gz
+            dist/amneziawg-go-*
+            dist/SHA256SUMS
