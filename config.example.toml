@@ -1,0 +1,232 @@
+# Kinveil global configuration (stored encrypted inside state.enc).
+#
+# Edit safely in RAM via: kinveil config
+# Print active file via:  kinveil config --print
+#
+# Every key below is commented out at its built-in default.
+# Uncomment any setting you want to override. Unknown keys are rejected.
+# Your comments and formatting stay intact across all CLI operations.
+
+
+[firewall]
+# Enforced in Linux kernel nftables across ALL VPN protocols (VLESS, Hysteria2, AmneziaWG, SSH)
+# AND mirrored inside Xray egress routing.
+
+# Block client egress to RFC1918 and CGNAT ranges.
+# Loopback, unspecified, link-local, multicast/reserved, and cloud IMDS addresses are always blocked.
+# block_private_networks = true
+
+# ISO 3166-1 alpha-2 country codes blocked on server egress (e.g. ["de", "jp"]).
+# Seeded from verified geoip.dat (with country URL fallback) and domain:<cc> in Xray.
+# block_countries = []
+
+# Extra IP addresses or CIDRs blocked across all VPN protocols in nftables and Xray.
+# block_cidrs = []
+
+# HTTPS URLs serving plain-text IP/CIDR blocklists (one IP/CIDR per line; '#' and ';' comments allowed).
+# block_ip_lists = []
+
+
+[firewall.auto_update]
+# On-server systemd timer that atomically refreshes nftables IP sets without restarting VPN services
+# whenever [firewall].block_countries or [firewall].block_ip_lists is non-empty.
+# enabled = true
+# interval_hours = 24
+
+# HTTPS URL templates used to refresh per-country IPv4 and IPv6 CIDRs (`{cc}` expands to lowercase ISO code).
+# ipv4_country_url = "https://raw.githubusercontent.com/ipverse/rir-ip/master/country/{cc}/ipv4-aggregated.txt"
+# ipv6_country_url = "https://raw.githubusercontent.com/ipverse/rir-ip/master/country/{cc}/ipv6-aggregated.txt"
+
+
+[firewall.xray]
+# Application-layer DPI and domain rules (enforced inside Xray for VLESS REALITY and Hysteria2).
+
+# Block BitTorrent protocol traffic inside Xray.
+# block_bittorrent = true
+
+# Extra Xray egress domain selectors (`domain:tld`, `full:host`, `geosite:name`, `keyword:`, `regexp:`, or host).
+# block_domains = []
+
+# HTTPS URLs serving plain-text domain blocklists (one selector or domain per line; '#' comments allowed).
+# block_domain_lists = []
+
+
+[dns]
+# Encrypted upstream DNS resolvers used by Xray on VPN nodes (`https+local://` DoH or global IPs).
+# xray_servers = ["https+local://1.1.1.1/dns-query", "https+local://1.0.0.1/dns-query"]
+
+# DNS servers pushed to AmneziaWG clients (1 to 4 IPv4 addresses).
+# amneziawg_servers = ["1.1.1.1", "1.0.0.1"]
+
+
+[subscription]
+# Client auto-refresh interval sent via Caddy's Profile-Update-Interval header (hours).
+# update_interval_hours = 12
+
+# Subscription profile title displayed in Happ/Throne (1-64 UTF-8 chars, no control chars).
+# profile_title = "Kinveil"
+
+
+[subscription.routing]
+# ISO 3166-1 alpha-2 country codes routed `direct` or `block` on client devices alongside private LANs
+# (compiles native `happ://routing/onadd/...` for Happ and `throne://route/...` for Throne).
+# bypass_countries = []
+# block_countries = []
+
+# Extra client-side split-tunneling selectors (`domain:tld`, `full:host`, `geosite:*`, CIDR, `geoip:*`).
+# direct_domains = []
+# direct_ips = []
+# proxy_domains = []
+# proxy_ips = []
+# block_domains = []
+# block_ips = []
+
+# Client Split-DoH resolvers (`domestic_*` resolves bypassed traffic directly; `remote_*` via VPN).
+# domestic_doh = "https://1.1.1.1/dns-query"
+# domestic_dns_ip = "1.1.1.1"
+# remote_doh = "https://1.1.1.1/dns-query"
+# remote_dns_ip = "1.1.1.1"
+
+# Optional raw deep-link overrides sent in Caddy's `routing` response header verbatim.
+# happ_link = "happ://routing/onadd/example"
+# throne_link = "throne://route/example"
+
+
+[vless]
+# Default enablement for VLESS REALITY + XHTTP unless overridden per server via `--protocols`.
+# Disable individual modes below or pass `--protocols` / `--clear-protocols` in `kinveil server update`.
+# enabled = true
+
+# Default TCP port for VLESS REALITY unless overridden per server.
+# port = 8443
+
+# Optional fleet-wide REALITY camouflage domain, dialback target (<sni>:443), and XHTTP Host header.
+# Leave sni unset to require explicit --vless-sni per VLESS-enabled server.
+# sni = "www.example.com"
+# target = "www.example.com:443"
+# xhttp_host = "cdn.example.com"
+
+# Advertise XHTTP stream-up and/or packet-up modes on VLESS REALITY inbounds.
+# stream = true
+# packet = true
+
+# uTLS client fingerprint (chrome, firefox, safari, ios, android, edge, 360, qq, random, randomized).
+# fingerprint = "chrome"
+
+# Advertise post-quantum X25519MLKEM768 key exchange in subscription links.
+# support_x25519mlkem768 = true
+
+
+[vless.xhttp]
+# Optional fleet-wide XHTTP path override (unset = per-server random 12-char path in state.enc).
+# path = "/edge"
+
+# XHTTP padding byte range and maximum buffered POST requests.
+# padding_bytes = "100-1000"
+# sc_max_buffered_posts = 30
+
+
+[vless.xmux]
+# Client XHTTP multiplexing limits ("lo-hi" range or integer; 0 disables a limit).
+# max_concurrency = "16-32"
+# max_connections = 0
+# c_max_reuse_times = 0
+# h_max_request_times = "600-900"
+# h_max_reusable_secs = "1800-3000"
+# h_keep_alive_period = 0
+
+
+[hysteria2]
+# Default enablement for Hysteria2 unless overridden per server via `--protocols`.
+# enabled = true
+
+# Default UDP port for Hysteria2 unless overridden per server.
+# 443/udp coexists natively with Caddy HTTPS on 443/tcp.
+# port = 443
+
+# TLS ALPN list, unauthenticated HTTP masquerade URL, and UDP NAT idle timeout (seconds).
+# alpn = ["h3"]
+# masquerade_url = "https://www.cloudflare.com"
+# udp_idle_timeout_secs = 60
+
+
+[amneziawg]
+# Default enablement for AmneziaWG 3.1 unless overridden per server via `--protocols`.
+# enabled = true
+
+# Default UDP port for AmneziaWG unless overridden per server.
+# port = 7443
+
+# IPv4 VPN subnet for AmneziaWG (prefix length must be <= /30; .1 is reserved for server).
+# subnet = "10.8.0.0/16"
+
+# Tunnel interface MTU (1280-1500; lower to 1280-1320 if PPPoE links fragment packets).
+# mtu = 1360
+
+# Randomized WireGuard/AmneziaWG timing ranges pushed in client INI configs ("lo-hi" or int).
+# rekey_after_time = "100-118"
+# rekey_timeout = "5-9"
+# reject_after_time = "176-249"
+# keepalive_timeout = "9-12"
+# max_handshake_attempts = "16-26"
+
+# AmneziaWG 3.1 protocol hardening extensions (disable only if targeting older AWG 1.5/2.0 clients).
+# random_trailers = true
+# disable_cookies = true
+
+
+[amneziawg.obfuscation]
+# Optional AmneziaWG obfuscation / CPS overrides (unset = per-server random values in state.enc).
+# jc = 6
+# jmin = 64
+# jmax = 180
+# s1 = 42
+# s2 = 88
+# s3 = 32
+# s4 = 48
+# h1 = "100000000-200000000"
+# h2 = "300000000-400000000"
+# h3 = "500000000-600000000"
+# h4 = "700000000-800000000"
+# i1 = "<r 48>"
+# i2 = "<c>"
+# i3 = "<t>"
+# i4 = "<r 16>"
+# i5 = "<d>"
+# content_padding_addition = "16-40"
+
+
+[ssh_forwarding]
+# Default enablement for SSH port forwarding unless overridden per server via `--protocols`.
+# Disabled by default to keep VPN nodes free of extra TCP/OpenSSH exposure unless opted in.
+# enabled = false
+
+# Default TCP port for kinveil-ssh (OpenSSH) unless overridden per server.
+# port = 2222
+
+
+[traffic]
+# Days of daily rollup files retained in /var/lib/kinveil/traffic on servers opted in via `--traffic` (1-3650).
+# retention_days = 90
+
+
+[sysctl]
+# Kernel socket buffer sizes written to /etc/sysctl.d/90-kinveil.conf for QUIC/AWG throughput.
+# udp_rmem_max = 16777216
+# udp_wmem_max = 16777216
+# udp_rmem_default = 4194304
+# udp_wmem_default = 4194304
+
+
+[artifacts]
+# Optional pinned runtime artifact overrides (HTTPS URL + lowercase hex SHA-256 pairs)
+# to update Xray-core, geodata, or amneziawg-go independently of a Kinveil release.
+# For amneziawg-go, point amneziawg_url at a direct linux/amd64 ELF binary and set its SHA-256.
+# xray_zip_url = "https://github.com/XTLS/Xray-core/releases/download/v26.11.9/Xray-linux-64.zip"
+# xray_zip_sha256 = "b651f7e1d9966ee2c1b1ee1bf8b52c72771824d3065dce96bbc8bcc19ed95f82"
+# geoip_url = "https://example.com/geoip.dat"
+# geoip_sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+# geosite_url = "https://example.com/geosite.dat"
+# geosite_sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+# amneziawg_url = "https://example.com/amneziawg-go-linux-amd64"
+# amneziawg_sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"

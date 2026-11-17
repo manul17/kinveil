@@ -1,0 +1,5 @@
+/target/
+*.enc
+!tests/fixtures/*.enc
+*.key
+.kvel.*

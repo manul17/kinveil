@@ -1,0 +1,77 @@
+[package]
+name = "kinveil"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+license = "MIT"
+publish = false
+repository = "https://github.com/manul17/kinveil"
+description = "Encrypted local control plane and deployer for Kinveil VPN servers"
+readme = "README.md"
+keywords = ["vpn", "amneziawg", "xray", "ssh", "cli"]
+categories = ["command-line-utilities", "network-programming"]
+
+[lib]
+name = "kinveil"
+path = "src/lib.rs"
+
+[[bin]]
+name = "kinveil"
+path = "src/main.rs"
+
+[dependencies]
+aes-gcm = "0.11"
+anyhow = "1"
+argon2 = { version = "0.6", default-features = false, features = ["alloc", "zeroize"] }
+base64 = "0.23"
+clap = { version = "4", features = ["derive", "env"] }
+clap_complete = "4"
+qrcode = { version = "0.14", default-features = false }
+flate2 = "1"
+ipnet = { version = "2", features = ["serde"] }
+rand = "0.10"
+rcgen = { version = "0.14", default-features = false, features = ["crypto", "pem", "ring"] }
+rpassword = "7"
+rustix = { version = "1", features = ["fs", "process"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.11"
+shlex = "1"
+ssh-key = { version = "0.6", features = ["ed25519", "std", "alloc"] }
+tar = "0.4"
+tempfile = "3"
+time = { version = "0.3", features = ["formatting", "parsing", "serde"] }
+toml = { version = "1", default-features = false, features = ["std", "parse", "serde"] }
+ureq = { version = "3", features = ["rustls", "gzip"] }
+x25519-dalek = { version = "3", features = ["static_secrets", "zeroize"] }
+x509-parser = "0.18"
+zeroize = "1"
+zip = { version = "9", default-features = false, features = ["deflate"] }
+
+[dev-dependencies]
+insta = { version = "1", features = ["yaml"] }
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+uninlined_format_args = "warn"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
+opt-level = 3
+
+[profile.dev.package.aes-gcm]
+opt-level = 3
+
+[profile.dev.package.sha2]
+opt-level = 3

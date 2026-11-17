@@ -1,0 +1,6 @@
+---
+source: tests/snapshots_render.rs
+expression: auth_keys
+---
+vpnssh1: restrict,port-forwarding ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAwGSdwcgs1TOrV69cTtDtVm1jHznlIse2DzaJgXufdv
+vpnssh2: restrict,port-forwarding ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAL2cK9P7K2saoIRU2x85j6jPH1mgeSNaHnInZi4uuuh

@@ -1,0 +1,37 @@
+---
+source: tests/snapshots_render.rs
+expression: "render_server_uapi(&state, srv1).unwrap()"
+---
+set=1
+private_key=b08915bb901ac1026be68827b7e154e7f03c64ca26f60c8ea882527f84c63867
+listen_port=7443
+jc=4
+jmin=60
+jmax=180
+s1=41
+s2=134
+s3=38
+s4=16
+h1=162955118
+h2=983515823
+h3=1305870938
+h4=1813353860
+i1=<r 52>
+header_protection_key=746573742d6865616465722d70726f74656374696f6e2d6b65792d3332627974
+content_padding_addition=17-41
+rekey_after_time=100-118
+rekey_timeout=5-9
+reject_after_time=176-249
+keepalive_timeout=9-12
+max_handshake_attempts=16-26
+random_trailers=true
+disable_cookies=true
+replace_peers=true
+public_key=ba19dcc511cb5c360b47de720c2c5dbcfeeec710dd4ba33a12676252517a5f48
+preshared_key=0000000000000000000000000000000000000000000000000000000000000001
+replace_allowed_ips=true
+allowed_ip=10.8.0.2/32
+public_key=88500bc7dc12cc7dbd162634f6fb3e5167dfa7f54e1225884569a4956a88cb1f
+preshared_key=0000000000000000000000000000000000000000000000000000000000000002
+replace_allowed_ips=true
+allowed_ip=10.8.0.3/32
