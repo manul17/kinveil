@@ -276,13 +276,13 @@ write_nft_map_block() {
 
 write_nft_traffic_rules() {
     local out_file="$1"
-    local has_awg="$2"
+    local awg_enabled="$2"
     local users_conf="$3"
-    local has_ssh="$4"
+    local ssh_enabled="$4"
     local ssh_uid_pairs="$5"
 
     local awg_uids=() awg_ips=()
-    if [ "$has_awg" -eq 1 ] && [ -f "$users_conf" ]; then
+    if [ "$awg_enabled" -eq 1 ] && [ -f "$users_conf" ]; then
         local u ip
         while read -r u ip; do
             if [ -z "$u" ] || [ -z "$ip" ]; then
@@ -294,7 +294,7 @@ write_nft_traffic_rules() {
     fi
 
     local ssh_uids=() ssh_skuids=()
-    if [ "$has_ssh" -eq 1 ] && [ -n "$ssh_uid_pairs" ]; then
+    if [ "$ssh_enabled" -eq 1 ] && [ -n "$ssh_uid_pairs" ]; then
         local su sk
         while IFS=: read -r su sk; do
             if [ -z "$su" ] || [ -z "$sk" ]; then
