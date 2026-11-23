@@ -26,7 +26,7 @@ argon2 = { version = "0.6", default-features = false, features = ["alloc", "zero
 base64 = "0.23"
 clap = { version = "4", features = ["derive", "env"] }
 clap_complete = "4"
-qrcode = { version = "0.14", default-features = false }
+qrcode = { version = "0.15", default-features = false }
 flate2 = "1"
 ipnet = { version = "2", features = ["serde"] }
 rand = "0.10"
